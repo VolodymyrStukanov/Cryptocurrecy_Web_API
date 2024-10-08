@@ -1,0 +1,40 @@
+
+volumes:
+    app_data:  
+
+networks:
+  cryptocurrency_network:
+    driver: bridge
+
+services:
+  cryptocurrency_web_api:
+    image: ${DOCKER_REGISTRY-}cryptocurrency_image
+    container_name: cryptocurrency_container
+    ports:
+      - "8088:80"
+    build:
+      context: .
+      dockerfile: ./WebApplication1/Dockerfile
+    environment:
+      - ASPNETCORE_URLS=http://+:80
+      - TZ=Europe/Kyiv
+      - ConnectionStrings__DefaultConnection=Username=postgres;Password=postgres;Host=cryptocurrency_database;Port=5432;Database=CryptocurrencyDatabase;Pooling=true;
+    depends_on:
+      - cryptocurrency_database
+    networks:
+      - cryptocurrency_network
+
+
+  cryptocurrency_database:
+    image: postgres:latest
+    container_name: cryptocurrency_database
+    environment:
+        - POSTGRES_DB=CryptocurrencyDatabase
+        - POSTGRES_USER=postgres
+        - POSTGRES_PASSWORD=postgres
+    volumes:
+        - app_data:/var/lib/postgresql/data
+    ports: 
+        - 54321:5432
+    networks:
+      - cryptocurrency_network
