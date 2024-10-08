@@ -35,6 +35,6 @@ services:
     volumes:
         - app_data:/var/lib/postgresql/data
     ports: 
-        - 54321:5432
+        - 12345:2345
     networks:
       - cryptocurrency_network
