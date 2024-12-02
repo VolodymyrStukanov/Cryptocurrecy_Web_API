@@ -6,7 +6,7 @@ namespace WebApplication1.JsonModels
     {
 
         [JsonProperty("asset_id_base")]
-        public string CurrencyAssetId { get; set; }
+        public required string CurrencyAssetId { get; set; }
 
         [JsonProperty("rate")]
         public double Rate { get; set; }

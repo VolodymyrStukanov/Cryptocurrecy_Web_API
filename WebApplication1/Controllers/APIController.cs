@@ -3,12 +3,12 @@ using System.Text.Json;
 
 namespace WebApplication1.Controllers
 {
-    public class APIController : ControllerBase
+    public class ApiController : ControllerBase
     {
         protected const string ConstJsonContentType = "application/json; charset=utf-8";
 
         protected readonly JsonSerializerOptions JsonSerializerOptions;
-        public APIController()
+        public ApiController()
         {
             JsonSerializerOptions = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
         }

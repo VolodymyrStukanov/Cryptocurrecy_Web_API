@@ -2,7 +2,6 @@
 using Newtonsoft.Json;
 using System.Net.WebSockets;
 using System.Text;
-using WebApplication1.Controllers;
 using WebApplication1.DB.Models;
 using WebApplication1.JsonModels;
 using WebApplication1.Services.Interfaces;
@@ -11,18 +10,22 @@ namespace WebApplication1.Services
 {
     public class RealTimeUpdateService : BackgroundService
     {
-        private readonly ILogger<CryptocurrencyController> _logger;
+        private readonly ILogger<RealTimeUpdateService> _logger;
         private readonly IServiceProvider _serviceProvider;
-        private readonly IConfiguration _config;
+
+        private readonly string? coinapiUrl;
+        private readonly string? apiKey;
         public RealTimeUpdateService(
             IServiceProvider serviceProvider,
             IConfiguration config,
-            ILogger<CryptocurrencyController> logger
+            ILogger<RealTimeUpdateService> logger
             )
         {
             _logger = logger;
             _serviceProvider = serviceProvider;
-            _config = config;
+
+            coinapiUrl = config.GetRequiredSection("CoinAPI").GetValue<string>("Url", defaultValue: string.Empty);
+            apiKey = config.GetSection("CoinAPI").GetValue<string>("API_Key");
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -34,8 +37,19 @@ namespace WebApplication1.Services
                     _logger.LogInformation("Crypto WebSocket Updater is running.");
 
                     var currencyService = scope.ServiceProvider.GetService<ICurrencyService>();
+                    if (currencyService == null)
+                    {
+                        _logger.LogError("The CurrencyService is not recieved");
+                        return;
+                    }
+
+                    if (String.IsNullOrEmpty(coinapiUrl))
+                    {
+                        _logger.LogError("The coin API URL is not recieved");
+                        return;
+                    }
                     var webSocketClient = new ClientWebSocket();
-                    var uri = new Uri("wss://ws.coinapi.io/v1/");
+                    var uri = new Uri(coinapiUrl);
                     await webSocketClient.ConnectAsync(uri, CancellationToken.None);
 
                     var currencies = currencyService.GetAllCurrencies().ToList();
@@ -48,7 +62,7 @@ namespace WebApplication1.Services
                     var subscribeMessage = new
                     {
                         type = "subscribe",
-                        apikey = _config.GetSection("CoinAPI").GetValue<string>("API_Key"),
+                        apikey = apiKey,
                         heartbeat = false,
                         subscribe_data_type = new[] { "exrate" },
                         subscribe_filter_asset_id = assetIds,
@@ -80,13 +94,20 @@ namespace WebApplication1.Services
                         if (currencyInfo != null)
                         {
                             var currency = currencyService.GetCurrency(currencyInfo.CurrencyAssetId);
-                            currencyService.UpdateCurrency(new Currency()
+                            if (currency == null)
                             {
-                                AssetId = currencyInfo.CurrencyAssetId,
-                                Name = currency.Name,
-                                Rate = currencyInfo.Rate,
-                                DateTime = currencyInfo.DateTime
-                            });
+                                _logger.LogError("There is no a currecy with AssetId {0}", currencyInfo.CurrencyAssetId);
+                            }
+                            else
+                            {
+                                currencyService.UpdateCurrency(new Currency()
+                                {
+                                    AssetId = currencyInfo.CurrencyAssetId,
+                                    Name = currency.Name,
+                                    Rate = currencyInfo.Rate,
+                                    DateTime = currencyInfo.DateTime
+                                });
+                            }
                         }
 
                         if (result.MessageType == WebSocketMessageType.Close)
@@ -102,7 +123,7 @@ namespace WebApplication1.Services
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError($"The error occurs in RealTimeUpdateService.ExecuteAsync method: {ex.Message}");
+                    _logger.LogError(ex, $"The error occurs in RealTimeUpdateService.ExecuteAsync method");
                 }
             }
         }

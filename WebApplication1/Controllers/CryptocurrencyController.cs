@@ -6,10 +6,10 @@ namespace WebApplication1.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class CryptocurrencyController : APIController
+    public class CryptocurrencyController : ApiController
     {
         private readonly ILogger<CryptocurrencyController> _logger;
-        private ICurrencyService _currencyService;
+        private readonly ICurrencyService _currencyService;
 
         public CryptocurrencyController(
             ICurrencyService currencyService, 
@@ -26,7 +26,7 @@ namespace WebApplication1.Controllers
             try
             {
                 var currencies = _currencyService.GetAllCurrencies().ToList();
-                if(currencies.Count() != 0)
+                if(currencies.Count != 0)
                 {
                     List<object> result = new List<object>();
                     foreach (var item in currencies)
@@ -39,11 +39,11 @@ namespace WebApplication1.Controllers
                     }
                     return BuildSuccessResult(result, "Currencies are found", 200);
                 }
-                throw new Exception("There are no any cryptocurrencies");
+                return BuildErrorResult("There are no any cryptocurrencies", 400);
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error occurs in GetAvailableCryptocurrencies method: {ex.Message}");
+                _logger.LogError(ex, $"Error occurs in GetAvailableCryptocurrencies method");
                 return BuildErrorResult(ex.Message, 400);
             }
         }
@@ -60,11 +60,11 @@ namespace WebApplication1.Controllers
                 {
                     return BuildSuccessResult(currency, "CurrencyInfo is found", 200);
                 }
-                throw new Exception($"There are no info about the currency with assert id {assetId}");
+                return BuildErrorResult($"There are no info about the currency with assert id {assetId}", 400);
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error occurs in GetCryptocurrencyPrice method: {ex.Message}");
+                _logger.LogError(ex, $"Error occurs in GetCryptocurrencyPrice method");
                 return BuildErrorResult(ex.Message, 400);
             }
         }

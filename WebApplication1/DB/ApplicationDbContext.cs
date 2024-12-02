@@ -7,14 +7,13 @@ namespace WebApplication1.DB
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
         {
-            //Database.EnsureDeleted();
             Database.EnsureCreated();
         }
 
-        protected override void OnModelCreating(ModelBuilder builder)
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
 
-            builder.Entity<Currency>(prop =>
+            modelBuilder.Entity<Currency>(prop =>
             {
                 prop.HasKey(x => x.AssetId);
 

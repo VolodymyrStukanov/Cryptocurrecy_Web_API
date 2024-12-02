@@ -7,10 +7,13 @@ namespace WebApplication1.Services
     public class CurrencyService : ICurrencyService
     {
         private readonly ApplicationDbContext _context;
+        private readonly ILogger<CurrencyService> _logger;
 
-        public CurrencyService(ApplicationDbContext context)
+        public CurrencyService(ApplicationDbContext context,
+            ILogger<CurrencyService> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
         public void AddCurrency(Currency model)
@@ -23,7 +26,10 @@ namespace WebApplication1.Services
         {
             var cur = _context.Currencies.FirstOrDefault(x => x.AssetId == model.AssetId);
             if (cur == null)
-                throw new Exception($"There is no currency with assert id {model}");
+            {
+                _logger.LogError("There is no currency with assert id {0}", model.AssetId);
+                return;
+            }
 
             _context.Entry(cur).State = Microsoft.EntityFrameworkCore.EntityState.Detached;
             _context.Currencies.Update(model);
@@ -34,7 +40,10 @@ namespace WebApplication1.Services
         {
             var cur = _context.Currencies.FirstOrDefault(x => x.AssetId == model.AssetId);
             if (cur == null)
-                throw new Exception($"There is no currency with assert id {model}");
+            {
+                _logger.LogError("There is no currency with assert id {0}", model.AssetId);
+                return;
+            }
 
             _context.Currencies.Remove(model);
             _context.SaveChanges();
@@ -43,8 +52,12 @@ namespace WebApplication1.Services
         public void RemoveCurrency(string assetId)
         {
             var cur = _context.Currencies.FirstOrDefault(x => x.AssetId == assetId);
+
             if (cur == null)
-                throw new Exception($"There is no currency with assert id {assetId}");
+            {
+                _logger.LogError("There is no currency with assert id {0}", assetId);
+                return;
+            }
 
             _context.Currencies.Remove(cur);
             _context.SaveChanges();
